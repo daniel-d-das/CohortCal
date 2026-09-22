@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CohortCal — Submission Calendar</title>
+<style>
+  :root{
+    --navy:#26315C;
+    --navy-dark:#1B2444;
+    --navy-tint:#EEF0F8;
+    --gold:#C99A3E;
+    --gold-tint:#FBF3E1;
+    --teal:#1E8E7E;
+    --teal-tint:#E4F4F1;
+    --danger:#C0503E;
+    --bg:#F6F7FB;
+    --card:#FFFFFF;
+    --ink:#1D2233;
+    --muted:#6B7089;
+    --line:#E4E6F0;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .app{max-width:900px;margin:0 auto;min-height:100vh;background:var(--bg);}
+
+  /* Onboarding */
+  .onboard{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,var(--navy) 0%,var(--navy-dark) 100%);
+    padding:24px;
+  }
+  .onboard-card{
+    background:var(--card);border-radius:20px;padding:36px 32px;max-width:420px;width:100%;
+    box-shadow:0 20px 50px rgba(10,15,40,0.35);
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
+  .brand .name{font-weight:800;font-size:19px;letter-spacing:-0.01em;color:var(--navy);}
+  .onboard-card h2{font-size:16px;margin:20px 0 4px;color:var(--ink);}
+  .onboard-card p.hint{font-size:12.5px;color:var(--muted);margin:0 0 14px;}
+  .step{display:none;}
+  .step.active{display:block;}
+  select, input[type=text]{
+    width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+    font-size:14px;margin-bottom:10px;background:#fff;color:var(--ink);
+  }
+  select:disabled{color:var(--muted);background:#F1F2F7;}
+  .prog-row{display:flex;gap:10px;margin-bottom:6px;}
+  .prog-btn{
+    flex:1;padding:14px 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;
+    cursor:pointer;text-align:center;font-weight:700;font-size:13.5px;color:var(--navy);
+  }
+  .prog-btn.selected{border-color:var(--navy);background:var(--navy-tint);}
+  .btn-primary{
+    width:100%;border:none;border-radius:11px;padding:13px;background:var(--navy);color:#fff;
+    font-weight:700;font-size:14.5px;cursor:pointer;margin-top:10px;
+  }
+  .btn-primary:disabled{opacity:0.4;cursor:default;}
+  .btn-ghost{
+    width:100%;border:1px solid var(--line);background:none;border-radius:11px;padding:11px;
+    font-size:13px;color:var(--muted);cursor:pointer;margin-top:8px;
+  }
+  .inst-option{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer;
+  }
+  .inst-option.selected{border-color:var(--navy);background:var(--navy-tint);}
+  .inst-option.disabled{opacity:0.45;cursor:not-allowed;}
+  .inst-option .tag{font-size:10.5px;background:#EFEFF4;color:var(--muted);padding:2px 7px;border-radius:6px;}
+
+  /* Header */
+  .topbar{
+    background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:10;
+  }
+  .topbar .brand .name{color:#fff;}
+  .topbar .brand .mark{background:#fff;color:var(--navy);}
+  .userchip{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+  .userchip .badge{background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px;}
+  .council-toggle{
+    background:var(--gold);color:#3A2C0A;border:none;padding:7px 13px;border-radius:20px;
+    font-size:12px;font-weight:700;cursor:pointer;
+  }
+  .council-toggle.active{background:#fff;color:var(--navy);}
+
+  .content{padding:18px 20px 60px;}
+
+  /* Digest card */
+  .digest{
+    background:linear-gradient(120deg,var(--teal) 0%,#166D60 100%);color:#fff;border-radius:16px;
+    padding:18px 20px;margin-bottom:20px;position:relative;overflow:hidden;
+  }
+  .digest .free-badge{
+    position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.2);font-size:10.5px;
+    padding:3px 9px;border-radius:10px;font-weight:700;letter-spacing:0.03em;
+  }
+  .digest h3{margin:0 0 4px;font-size:14px;}
+  .digest .big{font-size:26px;font-weight:800;margin:4px 0;}
+  .digest .sub{font-size:12.5px;opacity:0.9;line-height:1.5;}
+
+  .section-title{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:0.04em;margin:22px 0 10px;text-transform:uppercase;}
+
+  .sub-tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;letter-spacing:0.02em;}
+
+  .item-card{
+    background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-bottom:10px;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  }
+  .item-left{flex:1;}
+  .item-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .item-task{font-weight:700;font-size:14px;}
+  .item-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+  .item-desc{font-size:12.5px;color:var(--muted);margin-top:6px;max-width:520px;}
+  .bell-btn{
+    border:1px solid var(--line);background:#fff;border-radius:9px;width:34px;height:34px;flex-shrink:0;
+    cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;
+  }
+  .bell-btn.locked{color:var(--gold);}
+  .bell-btn.configured{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .reminder-note{font-size:11.5px;color:var(--navy);font-weight:700;margin-top:5px;}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(15,20,40,0.55);display:flex;align-items:center;justify-content:center;
+    z-index:100;padding:20px;
+  }
+  .modal-box{background:#fff;border-radius:16px;padding:22px 24px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.3);}
+  .modal-box h3{margin:0 0 6px;font-size:16px;color:var(--navy);}
+  .modal-box p.hint{font-size:12.5px;color:var(--muted);margin:0 0 14px;}
+  .modal-box input[type=password]{
+    width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;margin-bottom:12px;
+  }
+  .reminder-opt{
+    display:block;width:100%;text-align:left;padding:10px 13px;border:1.5px solid var(--line);border-radius:10px;
+    background:#fff;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:8px;
+  }
+  .reminder-opt.selected{border-color:var(--navy);background:var(--navy-tint);color:var(--navy);}
+  .reminder-opt.remove{color:var(--danger);border-color:#F0D5CF;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .modal-actions button{flex:1;}
+
+  .empty{color:var(--muted);font-size:13px;padding:20px;text-align:center;background:var(--card);border-radius:12px;border:1px dashed var(--line);}
+
+  /* Premium panel */
+  .premium-panel{
+    background:var(--gold-tint);border:1px solid #EAD9AE;border-radius:16px;padding:18px 20px;margin-top:26px;
+  }
+  .premium-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .premium-head h3{margin:0;font-size:14.5px;color:#5C4614;}
+  .preview-toggle{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#5C4614;}
+  .switch{position:relative;width:38px;height:21px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#D9C48F;border-radius:20px;cursor:pointer;transition:.2s;}
+  .slider:before{content:"";position:absolute;width:16px;height:16px;left:2.5px;top:2.5px;background:#fff;border-radius:50%;transition:.2s;}
+  input:checked + .slider{background:var(--navy);}
+  input:checked + .slider:before{transform:translateX(17px);}
+  .premium-sub{font-size:12px;color:#7A6428;margin-bottom:14px;}
+  .premium-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .premium-feat{
+    background:#fff;border:1px solid #EAD9AE;border-radius:11px;padding:12px;text-align:center;
+    font-size:12px;font-weight:600;color:var(--ink);position:relative;
+  }
+  .premium-feat .ico{font-size:18px;display:block;margin-bottom:6px;}
+  .premium-feat .lock{position:absolute;top:8px;right:9px;font-size:11px;}
+  .premium-feat.unlocked{border-color:var(--navy);}
+  .premium-feat button{
+    margin-top:8px;font-size:10.5px;padding:4px 9px;border-radius:7px;border:none;
+    background:var(--gold);color:#3A2C0A;font-weight:700;cursor:pointer;
+  }
+  .premium-feat.unlocked button{background:var(--teal);color:#fff;}
+
+  /* Council mode */
+  .council-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
+  .council-box h4{margin:0 0 10px;font-size:13.5px;color:var(--navy);}
+  .subject-chip{
+    display:inline-flex;align-items:center;gap:6px;background:var(--navy-tint);color:var(--navy);
+    padding:5px 11px;border-radius:20px;font-size:12px;font-weight:700;margin:0 6px 6px 0;
+  }
+  .subject-chip button{border:none;background:none;color:var(--navy);cursor:pointer;font-size:12px;padding:0;}
+  .add-subject-row{display:flex;gap:8px;margin-top:8px;}
+  .add-subject-row input{margin-bottom:0;}
+  .add-subject-row button, .form-row button{
+    border:none;background:var(--navy);color:#fff;border-radius:9px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .form-grid .full{grid-column:1/-1;}
+  label.small{font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;}
+  textarea{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);font-size:13.5px;font-family:inherit;resize:vertical;min-height:54px;}
+  .submit-row{margin-top:12px;display:flex;justify-content:flex-end;}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;
+    padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  .council-list-item{
+    display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;
+  }
+  .council-list-item:last-child{border-bottom:none;}
+  .council-list-item .del{color:var(--danger);cursor:pointer;font-size:11.5px;font-weight:700;background:none;border:none;}
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUBJECT_COLORS = {};
+const PALETTE = [
+  ["#26315C","#EEF0F8"], ["#1E8E7E","#E4F4F1"], ["#C0503E","#FBEAE6"],
+  ["#8A5FBF","#F1EAF9"], ["#B8791C","#FBF1DF"], ["#2E7DAF","#E7F2F9"]
+];
+function colorFor(subject){
+  if(!SUBJECT_COLORS[subject]){
+    const idx = Object.keys(SUBJECT_COLORS).length % PALETTE.length;
+    SUBJECT_COLORS[subject] = PALETTE[idx];
+  }
+  return SUBJECT_COLORS[subject];
+}
+
+const DEFAULT_SUBJECTS = ["Operations", "Marketing", "Finance"];
+const DEFAULT_SUBMISSIONS = [
+  {id:1, subject:"Operations", task:"Process-mapping assignment (handwritten)", deadline: daysFromNow(1, 17, 0), description:"Submit the handwritten process map covering the case discussed in Monday's session. No extensions."},
+  {id:2, subject:"Marketing", task:"Consumer survey response", deadline: daysFromNow(2, 23, 59), description:"Complete the primary research survey circulated by the Marketing faculty."},
+  {id:3, subject:"Finance", task:"Ratio analysis worksheet", deadline: daysFromNow(5, 18, 0), description:"Upload the completed ratio analysis worksheet for the assigned company."},
+  {id:4, subject:"Operations", task:"Quiz 2 (online)", deadline: daysFromNow(8, 9, 0), description:"Covers inventory management models, chapters 4-6."}
+];
+
+function daysFromNow(days, hour, min){
+  const d = new Date();
+  d.setDate(d.getDate()+days);
+  d.setHours(hour, min, 0, 0);
+  return d.toISOString();
+}
+
+function loadState(){
+  const raw = localStorage.getItem('cohortcal_state');
+  if(raw){ return JSON.parse(raw); }
+  return {
+    user: null,
+    subjects: DEFAULT_SUBJECTS.slice(),
+    submissions: DEFAULT_SUBMISSIONS.slice(),
+    councilMode: false,
+    premiumPreview: false
+  };
+}
+function saveState(){ localStorage.setItem('cohortcal_state', JSON.stringify(state)); }
+
+let state = loadState();
+let onboardStep = 1;
+let onboardData = {institution:null, programme:null, name:""};
+let activeModal = null; // null | {type:'password'} | {type:'reminder', id}
+const COUNCIL_PASSWORD = "admin";
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+function fmtDate(iso){
+  const d = new Date(iso);
+  const opts = {weekday:'short', month:'short', day:'numeric'};
+  const time = d.toLocaleTimeString('en-IN', {hour:'numeric', minute:'2-digit'});
+  return d.toLocaleDateString('en-IN', opts) + ', ' + time;
+}
+function daysUntil(iso){
+  const diff = new Date(iso) - new Date();
+  return Math.ceil(diff / (1000*60*60*24));
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!state.user){ app.innerHTML = renderOnboard(); attachOnboardHandlers(); return; }
+  app.innerHTML = renderMain() + renderModal();
+  attachMainHandlers();
+  attachModalHandlers();
+}
+
+function renderModal(){
+  if(!activeModal) return '';
+  if(activeModal.type === 'password'){
+    return `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-box">
+        <h3>🏛 Student Council Access</h3>
+        <p class="hint">Enter the council password to manage subjects and submissions.</p>
+        <input type="password" id="councilPassword" placeholder="Password" autofocus>
+        <div class="modal-actions">
+          <button class="btn-ghost" id="cancelPassword" style="margin-top:0;">Cancel</button>
+          <button class="btn-primary" id="submitPassword" style="margin-top:0;">Unlock</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(activeModal.type === 'reminder'){
+    const s = state.submissions.find(x=> x.id === activeModal.id);
+    if(!s) return '';
+    return `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-box">
+        <h3>🔔 Custom reminder</h3>
+        <p class="hint">${s.task} (${s.subject})</p>
+        ${REMINDER_OPTIONS.map(opt => `
+          <button class="reminder-opt ${s.reminderChoice===opt?'selected':''}" data-remind-opt="${opt}">${opt}${s.reminderChoice===opt?' ✓':''}</button>
+        `).join('')}
+        ${s.reminderChoice ? `<button class="reminder-opt remove" data-remind-opt="__remove">Remove reminder</button>` : ''}
+        <div class="modal-actions"><button class="btn-ghost" id="closeReminder" style="margin-top:0;">Close</button></div>
+      </div>
+    </div>`;
+  }
+  if(activeModal.type === 'dm'){
+    return renderDmModal();
+  }
+  if(activeModal.type === 'defaultReminder'){
+    return renderDefaultReminderModal();
+  }
+  if(activeModal.type === 'subjectReminders'){
+    return renderSubjectRemindersModal();
+  }
+  return '';
+}
+
+function attachModalHandlers(){
+  const overlay = document.getElementById('modalOverlay');
+  if(!overlay) return;
+  overlay.onclick = (e)=>{ if(e.target === overlay){ activeModal=null; render(); } };
+
+  const cancelPw = document.getElementById('cancelPassword');
+  if(cancelPw) cancelPw.onclick = ()=>{ activeModal=null; render(); };
+  const submitPw = document.getElementById('submitPassword');
+  if(submitPw) submitPw.onclick = ()=>{
+    const val = document.getElementById('councilPassword').value;
+    if(val === COUNCIL_PASSWORD){
+      state.councilMode = true; saveState(); activeModal = null; render();
+      showToast('Council mode unlocked ✓');
+    } else {
+      showToast('Incorrect password');
+    }
+  };
+  const pwInput = document.getElementById('councilPassword');
+  if(pwInput) pwInput.onkeydown = (e)=>{ if(e.key==='Enter') submitPw.click(); };
+
+  const closeRem = document.getElementById('closeReminder');
+  if(closeRem) closeRem.onclick = ()=>{ activeModal=null; render(); };
+  document.querySelectorAll('[data-remind-opt]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const s = state.submissions.find(x=> x.id === activeModal.id);
+      if(!s) return;
+      if(btn.dataset.remindOpt === '__remove'){ delete s.reminderChoice; showToast('Reminder removed'); }
+      else { s.reminderChoice = btn.dataset.remindOpt; showToast('Reminder set: ' + s.reminderChoice); }
+      saveState(); activeModal = null; render();
+    };
+  });
+
+  // DM delivery modal
+  const chWa = document.getElementById('chWhatsapp');
+  const chEm = document.getElementById('chEmail');
+  if(chWa) chWa.onclick = ()=>{ activeModal.channel = 'WhatsApp'; render(); };
+  if(chEm) chEm.onclick = ()=>{ activeModal.channel = 'Email'; render(); };
+  const dmContactInput = document.getElementById('dmContact');
+  if(dmContactInput) dmContactInput.oninput = (e)=>{ activeModal.contact = e.target.value; };
+  const cancelDm = document.getElementById('cancelDm');
+  if(cancelDm) cancelDm.onclick = ()=>{ activeModal = null; render(); };
+  const saveDm = document.getElementById('saveDm');
+  if(saveDm) saveDm.onclick = ()=>{
+    const channel = activeModal.channel;
+    const contact = (document.getElementById('dmContact').value || '').trim();
+    if(!channel){ showToast('Choose WhatsApp or Email first'); return; }
+    if(!contact){ showToast('Enter a number or email address'); return; }
+    state.user.dm = {channel, contact};
+    saveState(); activeModal = null; render();
+    showToast('DM delivery set up ✓');
+  };
+  const removeDm = document.getElementById('removeDm');
+  if(removeDm) removeDm.onclick = ()=>{
+    delete state.user.dm; saveState(); activeModal = null; render();
+    showToast('DM delivery removed');
+  };
+
+  // Default reminder modal
+  const closeDefaultRem = document.getElementById('closeDefaultReminder');
+  if(closeDefaultRem) closeDefaultRem.onclick = ()=>{ activeModal = null; render(); };
+  document.querySelectorAll('[data-default-opt]').forEach(btn=>{
+    btn.onclick = ()=>{
+      if(btn.dataset.defaultOpt === '__remove'){ delete state.user.defaultReminder; showToast('Default reminder removed'); }
+      else { state.user.defaultReminder = btn.dataset.defaultOpt; showToast('Default reminder set: ' + state.user.defaultReminder); }
+      saveState(); activeModal = null; render();
+    };
+  });
+
+  // Per-subject reminders modal
+  const closeSubjectRem = document.getElementById('closeSubjectReminders');
+  if(closeSubjectRem) closeSubjectRem.onclick = ()=>{ activeModal = null; render(); };
+  document.querySelectorAll('[data-subject-select]').forEach(sel=>{
+    sel.onchange = (e)=>{
+      if(!state.user.subjectReminders) state.user.subjectReminders = {};
+      const subj = sel.dataset.subjectSelect;
+      if(e.target.value){ state.user.subjectReminders[subj] = e.target.value; }
+      else { delete state.user.subjectReminders[subj]; }
+      saveState();
+    };
+  });
+}
+
+// ---------- ONBOARDING ----------
+function renderOnboard(){
+  return `
+  <div class="onboard">
+    <div class="onboard-card">
+      <div class="brand"><div class="mark">CC</div><div class="name">CohortCal</div></div>
+      <p class="hint" style="margin-top:2px;">One shared submission calendar for your whole cohort.</p>
+
+      <div class="step ${onboardStep===1?'active':''}" data-step="1">
+        <h2>Select your institution</h2>
+        <div class="inst-option ${onboardData.institution==='GLIM'?'selected':''}" data-inst="GLIM">
+          <span>Great Lakes Institute of Management (GLIM)</span>
+        </div>
+        <div class="inst-option disabled"><span>IIM Bangalore</span><span class="tag">Coming soon</span></div>
+        <div class="inst-option disabled"><span>ISB Hyderabad</span><span class="tag">Coming soon</span></div>
+        <button class="btn-primary" id="toStep2" ${!onboardData.institution?'disabled':''}>Continue</button>
+      </div>
+
+      <div class="step ${onboardStep===2?'active':''}" data-step="2">
+        <h2>Select your programme</h2>
+        <p class="hint">${onboardData.institution} Gurgaon &amp; Chennai</p>
+        <div class="prog-row">
+          <div class="prog-btn ${onboardData.programme==='PGPM'?'selected':''}" data-prog="PGPM">PGPM</div>
+          <div class="prog-btn ${onboardData.programme==='PGDM'?'selected':''}" data-prog="PGDM">PGDM</div>
+        </div>
+        <button class="btn-primary" id="toStep3" ${!onboardData.programme?'disabled':''}>Continue</button>
+        <button class="btn-ghost" id="backTo1">Back</button>
+      </div>
+
+      <div class="step ${onboardStep===3?'active':''}" data-step="3">
+        <h2>What's your name?</h2>
+        <input type="text" id="nameInput" placeholder="e.g. Daniel Das" value="${onboardData.name}">
+        <button class="btn-primary" id="joinBtn" ${!onboardData.name?'disabled':''}>Join Cohort Calendar</button>
+        <button class="btn-ghost" id="backTo2">Back</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachOnboardHandlers(){
+  document.querySelectorAll('.inst-option[data-inst]').forEach(el=>{
+    el.onclick = ()=>{ onboardData.institution='GLIM'; render(); };
+  });
+  const s2 = document.getElementById('toStep2');
+  if(s2) s2.onclick = ()=>{ onboardStep=2; render(); };
+  const back1 = document.getElementById('backTo1');
+  if(back1) back1.onclick = ()=>{ onboardStep=1; render(); };
+
+  document.querySelectorAll('.prog-btn').forEach(el=>{
+    el.onclick = ()=>{ onboardData.programme = el.dataset.prog; render(); };
+  });
+  const s3 = document.getElementById('toStep3');
+  if(s3) s3.onclick = ()=>{ onboardStep=3; render(); };
+  const back2 = document.getElementById('backTo2');
+  if(back2) back2.onclick = ()=>{ onboardStep=2; render(); };
+
+  const nameInput = document.getElementById('nameInput');
+  if(nameInput){
+    nameInput.oninput = (e)=>{
+      onboardData.name = e.target.value;
+      document.getElementById('joinBtn').disabled = !onboardData.name;
+    };
+  }
+  const joinBtn = document.getElementById('joinBtn');
+  if(joinBtn) joinBtn.onclick = ()=>{
+    state.user = {...onboardData};
+    saveState();
+    render();
+  };
+}
+
+// ---------- MAIN APP ----------
+function upcomingSorted(){
+  return state.submissions.slice().sort((a,b)=> new Date(a.deadline) - new Date(b.deadline));
+}
+
+function renderMain(){
+  const upcoming = upcomingSorted();
+  const next7 = upcoming.filter(s => daysUntil(s.deadline) <= 7 && daysUntil(s.deadline) >= 0);
+  const nearest = upcoming.slice(0,2);
+
+  return `
+  <div class="topbar">
+    <div class="brand"><div class="mark">CC</div><div class="name">CohortCal</div></div>
+    <div class="userchip">
+      <span class="badge">${state.user.institution} · ${state.user.programme}</span>
+      <button class="council-toggle ${state.councilMode?'active':''}" id="councilToggle">${state.councilMode? '👋 Exit Council Mode':'🏛 Student Council?'}</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <div class="digest">
+      <span class="free-badge">🔔 FREE · DAILY DIGEST</span>
+      <h3>Today's Digest</h3>
+      <div class="big">${next7.length} submission${next7.length===1?'':'s'} due in the next 7 days</div>
+      <div class="sub">
+        ${nearest.map(s=> `Nearest: <b>${s.task}</b> (${s.subject}) — ${fmtDate(s.deadline)}`).join(' &nbsp;·&nbsp; ') || 'Nothing on the calendar yet.'}
+      </div>
+    </div>
+
+    ${state.councilMode ? renderCouncilPanel() : ''}
+
+    <div class="section-title">Cohort Submission Calendar</div>
+    <div id="calendarList">
+      ${upcoming.length ? upcoming.map(renderItemCard).join('') : '<div class="empty">No submissions on the calendar yet.</div>'}
+    </div>
+
+    <div class="premium-panel">
+      <div class="premium-head">
+        <h3>⭐ Premium Features</h3>
+        <div class="preview-toggle">
+          Preview premium (demo)
+          <label class="switch"><input type="checkbox" id="premiumToggle" ${state.premiumPreview?'checked':''}><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="premium-sub">Everyone gets the free daily digest above. These are optional upgrades.</div>
+      <div class="premium-grid">
+        <div class="premium-feat ${state.premiumPreview?'unlocked':''}">
+          <span class="lock">${state.premiumPreview?'✅':'🔒'}</span>
+          <span class="ico">⏱️</span>Custom reminder timing
+          ${state.user.defaultReminder ? `<div class="reminder-note" style="margin-top:4px;">Default: ${state.user.defaultReminder}</div>` : ''}
+          <div><button id="defaultReminderBtn">${state.user.defaultReminder ? 'Update' : (state.premiumPreview?'Set up':'Upgrade')}</button></div>
+        </div>
+        <div class="premium-feat ${state.premiumPreview?'unlocked':''}">
+          <span class="lock">${state.premiumPreview?'✅':'🔒'}</span>
+          <span class="ico">🔔</span>Per-subject reminders
+          ${subjectReminderCount() > 0 ? `<div class="reminder-note" style="margin-top:4px;">${subjectReminderCount()} of ${state.subjects.length} subjects set</div>` : ''}
+          <div><button id="subjectRemindersBtn">${subjectReminderCount() > 0 ? 'Update' : (state.premiumPreview?'Set up':'Upgrade')}</button></div>
+        </div>
+        <div class="premium-feat ${state.premiumPreview?'unlocked':''}" id="dmFeatureCard">
+          <span class="lock">${state.premiumPreview?'✅':'🔒'}</span>
+          <span class="ico">💬</span>DM delivery
+          ${state.user.dm ? `<div class="reminder-note" style="margin-top:4px;">${state.user.dm.channel}: ${state.user.dm.contact}</div>` : ''}
+          <div><button id="dmConfigBtn">${state.user.dm ? 'Update' : (state.premiumPreview?'Set up':'Upgrade')}</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div>`;
+}
+
+function renderDmModal(){
+  const dm = state.user.dm;
+  return `
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3>💬 DM delivery setup</h3>
+      <p class="hint">Send reminders straight to you, instead of relying on you opening the app.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="reminder-opt ${activeModal.channel==='WhatsApp'?'selected':''}" id="chWhatsapp" style="margin-bottom:0;">📱 WhatsApp</button>
+        <button class="reminder-opt ${activeModal.channel==='Email'?'selected':''}" id="chEmail" style="margin-bottom:0;">✉️ Email</button>
+      </div>
+      <input type="text" id="dmContact" placeholder="${activeModal.channel==='Email' ? 'you@example.com' : '+91 XXXXXXXXXX'}" value="${activeModal.contact||''}">
+      <div class="modal-actions">
+        ${dm ? `<button class="reminder-opt remove" id="removeDm" style="margin-bottom:0;flex:1;text-align:center;">Remove</button>` : ''}
+        <button class="btn-ghost" id="cancelDm" style="margin-top:0;">Cancel</button>
+        <button class="btn-primary" id="saveDm" style="margin-top:0;">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+const REMINDER_OPTIONS = ["3 hours before", "6 hours before", "12 hours before", "24 hours before", "2 days before"];
+
+function subjectReminderCount(){
+  return Object.keys(state.user.subjectReminders || {}).length;
+}
+
+function effectiveReminder(s){
+  if(s.reminderChoice) return {value: s.reminderChoice, source: ''};
+  const subj = (state.user.subjectReminders || {})[s.subject];
+  if(subj) return {value: subj, source: ' (subject default)'};
+  if(state.user.defaultReminder) return {value: state.user.defaultReminder, source: ' (your default)'};
+  return null;
+}
+
+function renderDefaultReminderModal(){
+  const current = activeModal.value;
+  return `
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3>⏱️ Default reminder timing</h3>
+      <p class="hint">Applies to every submission unless a subject default or an item-specific reminder overrides it.</p>
+      ${REMINDER_OPTIONS.map(opt => `
+        <button class="reminder-opt ${current===opt?'selected':''}" data-default-opt="${opt}">${opt}${current===opt?' ✓':''}</button>
+      `).join('')}
+      ${state.user.defaultReminder ? `<button class="reminder-opt remove" data-default-opt="__remove">Remove default</button>` : ''}
+      <div class="modal-actions"><button class="btn-ghost" id="closeDefaultReminder" style="margin-top:0;">Close</button></div>
+    </div>
+  </div>`;
+}
+
+function renderSubjectRemindersModal(){
+  const sr = state.user.subjectReminders || {};
+  return `
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" style="max-width:400px;">
+      <h3>🔔 Per-subject reminder defaults</h3>
+      <p class="hint">Overrides your overall default for one subject. An item-specific reminder (bell icon) still wins over this.</p>
+      ${state.subjects.map(sub => `
+        <label class="small" style="display:block;margin-top:8px;">${sub}</label>
+        <select data-subject-select="${sub}">
+          <option value="">Use overall default${state.user.defaultReminder ? ' (' + state.user.defaultReminder + ')' : ''}</option>
+          ${REMINDER_OPTIONS.map(opt => `<option value="${opt}" ${sr[sub]===opt?'selected':''}>${opt}</option>`).join('')}
+        </select>
+      `).join('')}
+      <div class="modal-actions" style="margin-top:14px;"><button class="btn-primary" id="closeSubjectReminders" style="margin-top:0;">Done</button></div>
+    </div>
+  </div>`;
+}
+
+function renderItemCard(s){
+  const [fg,bg] = colorFor(s.subject);
+  const dleft = daysUntil(s.deadline);
+  const urgent = dleft <= 2;
+  const hasReminder = state.premiumPreview && s.reminderChoice;
+  const eff = state.premiumPreview ? effectiveReminder(s) : null;
+  let bellClass = 'bell-btn';
+  let bellIcon = '🔒';
+  let bellTitle = 'Premium feature — tap to learn more';
+  if(state.premiumPreview){
+    bellIcon = hasReminder ? '🔔' : '🔕';
+    bellClass += hasReminder ? ' configured' : '';
+    bellTitle = hasReminder ? `Reminder: ${s.reminderChoice}` : 'Set an item-specific reminder (overrides defaults)';
+  }
+  return `
+  <div class="item-card">
+    <div class="item-left">
+      <div class="item-top">
+        <span class="sub-tag" style="color:${fg};background:${bg};">${s.subject}</span>
+        ${urgent ? `<span class="sub-tag" style="color:#fff;background:var(--danger);">${dleft<=0?'DUE TODAY':dleft+'d left'}</span>` : ''}
+      </div>
+      <div class="item-task">${s.task}</div>
+      <div class="item-meta">📅 ${fmtDate(s.deadline)}</div>
+      <div class="item-desc">${s.description}</div>
+      ${eff ? `<div class="reminder-note">🔔 Reminds you ${eff.value.toLowerCase()}${eff.source}</div>` : ''}
+    </div>
+    <button class="${bellClass}" title="${bellTitle}" data-bell-id="${s.id}">${bellIcon}</button>
+  </div>`;
+}
+
+function renderCouncilPanel(){
+  return `
+  <div class="council-box">
+    <h4>📚 Subjects this term</h4>
+    <div>
+      ${state.subjects.map(sub=> `<span class="subject-chip">${sub} <button data-delsub="${sub}">✕</button></span>`).join('')}
+    </div>
+    <div class="add-subject-row">
+      <input type="text" id="newSubject" placeholder="Add a subject, e.g. Strategy">
+      <button id="addSubjectBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="council-box">
+    <h4>➕ Add a submission</h4>
+    <div class="form-grid">
+      <div>
+        <label class="small">SUBJECT</label>
+        <select id="f_subject">
+          ${state.subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="small">TASK</label>
+        <input type="text" id="f_task" placeholder="e.g. Case write-up">
+      </div>
+      <div>
+        <label class="small">DEADLINE DATE</label>
+        <input type="text" id="f_date" placeholder="DD-MM-YYYY">
+      </div>
+      <div>
+        <label class="small">DEADLINE TIME</label>
+        <input type="text" id="f_time" placeholder="HH:MM (24h)">
+      </div>
+      <div class="full">
+        <label class="small">DESCRIPTION</label>
+        <textarea id="f_desc" placeholder="Any details students need"></textarea>
+      </div>
+    </div>
+    <div class="submit-row"><button id="addSubmissionBtn">Add to Calendar</button></div>
+
+    <h4 style="margin-top:18px;">Submissions you've added</h4>
+    ${state.submissions.length ? state.submissions.map(s=> `
+      <div class="council-list-item">
+        <span>${s.subject} — ${s.task} (${fmtDate(s.deadline)})</span>
+        <button class="del" data-delsub-id="${s.id}">Delete</button>
+      </div>`).join('') : '<div class="empty">None yet.</div>'}
+  </div>`;
+}
+
+function attachMainHandlers(){
+  document.getElementById('councilToggle').onclick = ()=>{
+    if(state.councilMode){
+      state.councilMode = false; saveState(); render();
+    } else {
+      activeModal = {type:'password'}; render();
+    }
+  };
+  const premToggle = document.getElementById('premiumToggle');
+  if(premToggle) premToggle.onchange = (e)=>{
+    state.premiumPreview = e.target.checked; saveState(); render();
+  };
+  document.querySelectorAll('[data-bell-id]').forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!state.premiumPreview){
+        showToast('🔒 Custom reminders are a Premium feature — try "Preview premium" below');
+        return;
+      }
+      activeModal = {type:'reminder', id: Number(btn.dataset.bellId)};
+      render();
+    };
+  });
+  const dmBtn = document.getElementById('dmConfigBtn');
+  if(dmBtn) dmBtn.onclick = ()=>{
+    if(!state.premiumPreview){
+      showToast('🔒 DM delivery is a Premium feature — try "Preview premium" below');
+      return;
+    }
+    const existing = state.user.dm;
+    activeModal = {type:'dm', channel: existing ? existing.channel : null, contact: existing ? existing.contact : ''};
+    render();
+  };
+  const defaultRemBtn = document.getElementById('defaultReminderBtn');
+  if(defaultRemBtn) defaultRemBtn.onclick = ()=>{
+    if(!state.premiumPreview){
+      showToast('🔒 Custom reminder timing is a Premium feature — try "Preview premium" below');
+      return;
+    }
+    activeModal = {type:'defaultReminder', value: state.user.defaultReminder || null};
+    render();
+  };
+  const subjectRemBtn = document.getElementById('subjectRemindersBtn');
+  if(subjectRemBtn) subjectRemBtn.onclick = ()=>{
+    if(!state.premiumPreview){
+      showToast('🔒 Per-subject reminders is a Premium feature — try "Preview premium" below');
+      return;
+    }
+    activeModal = {type:'subjectReminders'};
+    render();
+  };
+
+  if(state.councilMode){
+    document.querySelectorAll('[data-delsub]').forEach(btn=>{
+      btn.onclick = ()=>{
+        state.subjects = state.subjects.filter(s=> s!==btn.dataset.delsub);
+        saveState(); render();
+      };
+    });
+    const addSubBtn = document.getElementById('addSubjectBtn');
+    if(addSubBtn) addSubBtn.onclick = ()=>{
+      const inp = document.getElementById('newSubject');
+      const val = inp.value.trim();
+      if(val && !state.subjects.includes(val)){
+        state.subjects.push(val); saveState(); render();
+      }
+    };
+    const addSubmissionBtn = document.getElementById('addSubmissionBtn');
+    if(addSubmissionBtn) addSubmissionBtn.onclick = ()=>{
+      const subject = document.getElementById('f_subject').value;
+      const task = document.getElementById('f_task').value.trim();
+      const dateVal = document.getElementById('f_date').value.trim();
+      const timeVal = document.getElementById('f_time').value.trim() || '23:59';
+      const desc = document.getElementById('f_desc').value.trim();
+      if(!task || !dateVal){ showToast('Add at least a task and date'); return; }
+
+      const dateMatch = dateVal.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if(!dateMatch){ showToast('Date must be in DD-MM-YYYY format'); return; }
+      const [, dd, mm, yyyy] = dateMatch;
+      const timeMatch = timeVal.match(/^(\d{1,2}):(\d{2})$/);
+      if(!timeMatch){ showToast('Time must be in HH:MM (24h) format'); return; }
+      const [, hh, min] = timeMatch;
+      const day = Number(dd), month = Number(mm), year = Number(yyyy), hour = Number(hh), minute = Number(min);
+      if(month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59){
+        showToast('Check the date/time values entered'); return;
+      }
+      const dateObj = new Date(year, month - 1, day, hour, minute, 0);
+      const iso = dateObj.toISOString();
+      const id = Date.now();
+      state.submissions.push({id, subject, task, deadline: iso, description: desc || 'No additional details.'});
+      saveState();
+      showToast('Added to the cohort calendar ✓');
+      render();
+    };
+    document.querySelectorAll('[data-delsub-id]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = Number(btn.dataset.delsubId);
+        state.submissions = state.submissions.filter(s=> s.id !== id);
+        saveState(); render();
+      };
+    });
+  }
+}
+
+render();
+</script>
+</body>
+</html>
